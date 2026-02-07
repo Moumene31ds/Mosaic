@@ -2,511 +2,495 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mosaic Pro V3 - المحرر الشامل</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mosaic Pro V4 - iPhone Style</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
     <style>
         :root {
-            --bg: #121212;
-            --surface: #1E1E1E;
-            --surface-2: #2d2d2d;
-            --primary: #BB86FC;
-            --secondary: #03DAC6;
-            --accent: #FF4081;
+            --bg: #000000;
+            --panel: rgba(28, 28, 30, 0.95);
+            --accent: #0A84FF; /* iOS Blue */
+            --danger: #FF453A;
             --text: #ffffff;
+            --radius: 16px;
         }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             background-color: var(--bg);
             color: var(--text);
-            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            font-family: 'Tajawal', sans-serif;
+            margin: 0; padding: 0;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 10px;
-            height: 100vh;
             overflow: hidden;
-            user-select: none;
         }
 
-        /* --- الهيدر --- */
+        /* --- Header --- */
         header {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            box-sizing: border-box;
+            padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(20px);
+            z-index: 10;
         }
+        h1 { margin: 0; font-size: 18px; font-weight: 500; letter-spacing: 0.5px; }
+        .btn-text { background: none; border: none; color: var(--accent); font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-text.cancel { color: var(--danger); }
 
-        h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; color: var(--primary); display: flex; align-items: center; gap: 5px;}
-        .version-tag { font-size: 0.7rem; background: var(--surface-2); padding: 2px 6px; border-radius: 4px; color: #aaa;}
-
-        /* --- منطقة العمل (Canvas) --- */
-        .canvas-wrapper {
+        /* --- Canvas Area --- */
+        #workspace {
             flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            overflow: hidden;
             position: relative;
-            background: repeating-conic-gradient(#222 0% 25%, #181818 0% 50%) 50% / 20px 20px;
-            border-radius: 12px;
-            margin: 10px 0;
-            border: 2px dashed #333;
-            transition: border-color 0.3s;
+            display: flex; justify-content: center; align-items: center;
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow: hidden;
         }
-        
-        .canvas-wrapper.drag-over { border-color: var(--primary); background: rgba(187, 134, 252, 0.1); }
 
         canvas {
-            max-width: 100%;
-            max-height: 100%;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            cursor: crosshair;
-            opacity: 0; /* مخفي حتى تحميل الصورة */
-            transition: opacity 0.5s;
-        }
-        
-        .canvas-placeholder {
-            position: absolute; color: #555; display: flex; flex-direction: column; align-items: center;
-            pointer-events: none;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            max-width: 100%; max-height: 100%;
+            transition: transform 0.2s;
         }
 
-        /* --- شريط الأدوات السفلي --- */
-        .toolbar {
-            background: var(--surface);
-            width: 95%;
-            max-width: 650px;
-            border-radius: 24px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.4);
-            border: 1px solid #333;
-        }
-
-        .tools-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-
-        /* مجموعة الفلاتر */
-        .segmented-control {
-            display: flex;
-            background: var(--surface-2);
-            border-radius: 14px;
-            padding: 4px;
-            flex-grow: 2;
-        }
-
-        .segment-btn {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #aaa;
-            padding: 10px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: 0.2s;
-            display: flex; align-items: center; justify-content: center; gap: 5px;
-        }
-
-        .segment-btn span { font-size: 18px; }
-        .segment-btn.active { background: var(--primary); color: #000; font-weight: 600; }
-        .segment-btn.sticker-mode.active { background: var(--accent); color: white; }
-
-        /* أزرار الأيقونات */
-        .icon-btn {
-            background: var(--surface-2);
-            color: #eee;
-            border: none;
-            width: 45px; height: 45px;
+        /* --- The Magnifier (المكبر) --- */
+        .magnifier {
+            position: absolute;
+            width: 100px; height: 100px;
             border-radius: 50%;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: 0.2s;
-            position: relative;
-        }
-
-        .icon-btn:hover { background: #444; transform: translateY(-2px); }
-        .icon-btn:active { transform: translateY(0); }
-        .icon-btn.ai { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .icon-btn.save { background: var(--secondary); color: #000; }
-        .icon-btn.accent { background: var(--accent); color: white; }
-        
-        .badge { position: absolute; top: -5px; right: -5px; background: red; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--surface); display: none;}
-
-        /* Sliders controls */
-        .sliders-container {
-            display: flex; flex-direction: column; gap: 8px; flex-grow: 1;
-        }
-        .slider-group {
-            display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: #aaa;
-        }
-        .slider-label { min-width: 60px; }
-        input[type="range"] {
-            flex-grow: 1;
-            accent-color: var(--primary);
-            height: 4px; cursor: pointer;
-        }
-        input[type="range"].intensity-range { accent-color: var(--secondary); }
-
-        /* Loading & Inputs */
-        .loading-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85);
+            border: 2px solid white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            overflow: hidden;
+            pointer-events: none;
             display: none;
-            justify-content: center; align-items: center;
-            z-index: 100; color: white; font-size: 1.1rem;
-            flex-direction: column; gap: 15px;
-            border-radius: 12px;
-            backdrop-filter: blur(5px);
+            z-index: 100;
+            background: #fff;
         }
-        .spinner { border: 4px solid #333; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        input[type="file"] { display: none; }
+        .magnifier canvas {
+            position: absolute;
+            top: 0; left: 0;
+            /* سيتم تحريك هذا بالكود */
+        }
+        .magnifier::after {
+            content: '+';
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255,255,255,0.5); font-size: 20px;
+        }
 
+        /* --- Bottom Controls (iOS Style) --- */
+        .controls {
+            background: var(--panel);
+            backdrop-filter: blur(20px);
+            padding: 20px 15px 40px 15px; /* Extra padding for iPhone bottom bar */
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            display: flex; flex-direction: column; gap: 20px;
+            z-index: 20;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Tools Selector */
+        .tools-scroll {
+            display: flex; gap: 15px; overflow-x: auto; padding-bottom: 5px;
+            justify-content: center;
+        }
+        .tool-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            background: none; border: none; color: #888;
+            min-width: 60px; cursor: pointer; transition: 0.2s;
+        }
+        .tool-btn .icon-box {
+            width: 50px; height: 50px;
+            background: #2C2C2E;
+            border-radius: 12px;
+            display: flex; justify-content: center; align-items: center;
+            transition: 0.2s;
+        }
+        .tool-btn span { font-size: 24px; }
+        .tool-btn p { margin: 0; font-size: 11px; font-family: 'Tajawal'; }
+        
+        .tool-btn.active .icon-box { background: var(--accent); color: white; transform: translateY(-5px); box-shadow: 0 5px 15px rgba(10, 132, 255, 0.4); }
+        .tool-btn.active p { color: white; }
+
+        /* Sliders */
+        .slider-container { display: flex; align-items: center; gap: 15px; padding: 0 10px; }
+        .slider-label { width: 30px; color: #888; text-align: center; font-size: 12px; }
+        
+        input[type="range"] {
+            flex-grow: 1; -webkit-appearance: none; background: #3A3A3C; height: 4px; border-radius: 2px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 24px; height: 24px; background: white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        /* Loader */
+        .loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 200;
+            display: none; justify-content: center; align-items: center; flex-direction: column; color: white;
+        }
+        .spinner { width: 40px; height: 40px; border: 4px solid #333; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        input[type="file"] { display: none; }
     </style>
     <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
 
     <header>
-        <h1>MOSAIC <span class="version-tag">V3 Pro</span></h1>
-        <div style="display: flex; gap: 10px;">
-            <label for="upload-main" class="icon-btn" title="فتح صورة (أو اسحبها هنا)"><span class="material-icons">add_photo_alternate</span></label>
-            <button class="icon-btn save" id="btn-save" title="حفظ الصورة"><span class="material-icons">save_alt</span></button>
-        </div>
+        <button class="btn-text cancel" onclick="resetCanvas()">مسح الكل</button>
+        <h1>Mosaic Pro</h1>
+        <label for="file-upload" class="btn-text">فتح صورة</label>
+        <input type="file" id="file-upload" accept="image/*">
     </header>
 
-    <div class="canvas-wrapper" id="wrapper">
-        <div class="canvas-placeholder" id="placeholder">
-            <span class="material-icons" style="font-size: 48px; opacity: 0.5;">image</span>
-            <p>اسحب الصورة هنا أو اضغط زر الإضافة</p>
+    <div id="workspace">
+        <div class="magnifier" id="magnifier">
+            <canvas id="mag-canvas"></canvas>
         </div>
-        <div class="loading-overlay" id="loader">
-            <div class="spinner"></div>
-            <span>جاري المعالجة بالذكاء الاصطناعي...</span>
-        </div>
-        <canvas id="canvas"></canvas>
+        <canvas id="main-canvas"></canvas>
     </div>
 
-    <div class="toolbar">
-        <div class="tools-row">
-            <div class="segmented-control">
-                <button class="segment-btn active" onclick="setToolMode('mosaic')">
-                    <span class="material-icons-outlined">grid_on</span> مربعات
-                </button>
-                <button class="segment-btn" onclick="setToolMode('blur')">
-                    <span class="material-icons-outlined">blur_on</span> ضباب
-                </button>
-                <button class="segment-btn" onclick="setToolMode('color')">
-                    <span class="material-icons-outlined">format_paint</span> لون
-                </button>
-            </div>
+    <div class="controls">
+        <div class="slider-container">
+            <span class="material-icons slider-label">brush</span>
+            <input type="range" id="brush-size" min="10" max="150" value="40">
+            <span class="material-icons slider-label" style="font-size: 20px;">circle</span>
+        </div>
+
+        <div class="tools-scroll">
+            <button class="tool-btn active" onclick="setTool('mosaic')">
+                <div class="icon-box"><span class="material-icons-round">grid_view</span></div>
+                <p>مربعات</p>
+            </button>
             
-             <label for="upload-sticker" class="icon-btn accent" title="إضافة صورة للتعديل (ملصق)">
-                 <span class="material-icons">layers</span>
-                 <span class="badge" id="sticker-badge"></span>
-            </label>
-        </div>
+            <button class="tool-btn" onclick="setTool('blur')">
+                <div class="icon-box"><span class="material-icons-round">blur_on</span></div>
+                <p>ضباب</p>
+            </button>
 
-        <div class="tools-row" style="align-items: flex-start;">
-             <div class="sliders-container">
-                <div class="slider-group">
-                    <span class="material-icons" style="font-size: 16px;">brush</span>
-                    <input type="range" id="brush-size" min="10" max="150" value="50" title="حجم الفرشاة">
-                </div>
-                <div class="slider-group">
-                    <span class="material-icons" style="font-size: 16px;">tune</span>
-                    <input type="range" id="intensity-size" class="intensity-range" min="1" max="100" value="50" title="قوة التأثير">
-                </div>
-            </div>
+            <button class="tool-btn" onclick="setTool('crystal')">
+                <div class="icon-box"><span class="material-icons-round">details</span></div>
+                <p>كريستال</p>
+            </button>
 
-            <div style="display: flex; gap: 8px;">
-                <button class="icon-btn" id="btn-undo" title="تراجع"><span class="material-icons">undo</span></button>
-                <button class="icon-btn ai" id="btn-auto" title="كشف الوجوه تلقائياً (AI)"><span class="material-icons">face_retouching_natural</span></button>
-            </div>
+            <button class="tool-btn" onclick="setTool('eraser')">
+                <div class="icon-box"><span class="material-icons-round">cleaning_services</span></div>
+                <p>ممحاة</p>
+            </button>
+
+            <div style="width: 1px; background: #333; margin: 0 5px;"></div>
+
+            <button class="tool-btn" onclick="detectFaces()">
+                <div class="icon-box" style="background: linear-gradient(135deg, #FF2D55, #FF375F); color: white;">
+                    <span class="material-icons-round">face_retouching_natural</span>
+                </div>
+                <p>AI تلقائي</p>
+            </button>
+
+            <button class="tool-btn" onclick="saveImage()">
+                <div class="icon-box" style="background: #30D158; color: white;">
+                    <span class="material-icons-round">save_alt</span>
+                </div>
+                <p>حفظ</p>
+            </button>
         </div>
     </div>
 
-    <input type="file" id="upload-main" accept="image/*">
-    <input type="file" id="upload-sticker" accept="image/png, image/jpeg, image/gif">
-
+    <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <p id="loader-text">جاري المعالجة...</p>
+    </div>
 
     <script>
-        // --- إعدادات النظام ---
-        const canvas = document.getElementById('canvas');
+        // --- تهيئة المتغيرات ---
+        const canvas = document.getElementById('main-canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        const wrapper = document.getElementById('wrapper');
-        const loader = document.getElementById('loader');
-        const placeholder = document.getElementById('placeholder');
         
-        // عناصر التحكم
-        const brushSlider = document.getElementById('brush-size');
-        const intensitySlider = document.getElementById('intensity-size');
-        const stickerBadge = document.getElementById('sticker-badge');
+        // متغيرات المكبر
+        const magnifier = document.getElementById('magnifier');
+        const magCanvas = document.getElementById('mag-canvas');
+        const magCtx = magCanvas.getContext('2d');
 
-        // حالة التطبيق
-        let originalImage = new Image();
-        let stickerImage = null; // الصورة الإضافية (الملصق)
-        let historyStack = [];
-        let currentToolMode = 'mosaic'; // mosaic, blur, color, sticker
+        let originalImg = new Image();
+        let currentTool = 'mosaic';
         let isDrawing = false;
-        let isModelsLoaded = false;
+        let brushSize = 40;
+        let historyStack = [];
 
-        // --- تهيئة الأداة ---
-        function setToolMode(mode) {
-            currentToolMode = mode;
-            // تحديث الواجهة
-            document.querySelectorAll('.segment-btn').forEach(btn => btn.classList.remove('active'));
-            if(mode !== 'sticker') {
-                event.target.closest('.segment-btn').classList.add('active');
-                canvas.style.cursor = 'crosshair';
-            }
-        }
-        
-        // --- تفعيل وضع الملصق عند اختيار صورة ---
-        document.getElementById('upload-sticker').addEventListener('change', (e) => {
+        // --- تحميل الصورة ---
+        document.getElementById('file-upload').addEventListener('change', (e) => {
             const file = e.target.files[0];
-            if (!file) return;
+            if(!file) return;
+
             const reader = new FileReader();
             reader.onload = (evt) => {
-                stickerImage = new Image();
-                stickerImage.onload = () => {
-                    stickerBadge.style.display = 'block'; // إظهار نقطة حمراء
-                    currentToolMode = 'sticker'; // تفعيل الوضع مباشرة
-                    canvas.style.cursor = 'copy'; // تغيير شكل الماوس
-                    alert("تم تحميل الصورة الإضافية. اضغط الآن على أي مكان في الصورة الرئيسية لوضعها.");
-                };
-                stickerImage.src = evt.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-
-
-        // --- 1. تحميل موديلات الذكاء الاصطناعي ---
-        async function loadModels() {
-            try {
-                // تأكد من وجود مجلد /models
-                await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-                isModelsLoaded = true;
-                console.log("AI Ready");
-            } catch (e) {
-                console.warn("AI Models not found locally.");
-            }
-        }
-        loadModels();
-
-        // --- 2. نظام تحميل الصور (زر + سحب وإفلات) ---
-        function handleImageUpload(file) {
-            if (!file || !file.type.startsWith('image/')) return;
-            
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                originalImage.onload = () => {
-                    // إعداد الكانفاس
-                    canvas.width = originalImage.width;
-                    canvas.height = originalImage.height;
-                    ctx.drawImage(originalImage, 0, 0);
+                originalImg.onload = () => {
+                    // ضبط أبعاد الكانفاس لتناسب الشاشة
+                    const workspace = document.getElementById('workspace');
+                    const maxWidth = workspace.clientWidth;
+                    const maxHeight = workspace.clientHeight;
                     
-                    // تحديث الواجهة
-                    canvas.style.opacity = 1;
-                    placeholder.style.display = 'none';
-                    wrapper.style.border = 'none';
-                    saveState();
+                    // حساب النسبة للحفاظ على الأبعاد
+                    let newWidth = originalImg.width;
+                    let newHeight = originalImg.height;
+                    
+                    if (newWidth > 2000 || newHeight > 2000) { // تصغير الصور العملاقة للأداء
+                         const ratio = Math.min(2000 / newWidth, 2000 / newHeight);
+                         newWidth *= ratio;
+                         newHeight *= ratio;
+                    }
+
+                    canvas.width = newWidth;
+                    canvas.height = newHeight;
+                    
+                    // عرض الصورة
+                    ctx.drawImage(originalImg, 0, 0, newWidth, newHeight);
+                    
+                    // حفظ نسخة للأصل (للممحاة)
+                    // تحديث originalImg ليشير للنسخة المصغرة في الذاكرة
+                    const tempC = document.createElement('canvas');
+                    tempC.width = newWidth; tempC.height = newHeight;
+                    tempC.getContext('2d').drawImage(originalImg, 0, 0, newWidth, newHeight);
+                    originalImg.src = tempC.toDataURL(); // تحديث المصدر ليكون الصورة الحالية
+
+                    saveHistory();
                 };
-                originalImage.src = evt.target.result;
+                originalImg.src = evt.target.result;
             };
             reader.readAsDataURL(file);
+        });
+
+        // --- أدوات النظام ---
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
         }
 
-        // أحداث زر الرفع
-        document.getElementById('upload-main').addEventListener('change', (e) => handleImageUpload(e.target.files[0]));
-
-        // أحداث السحب والإفلات (Drag & Drop)
-        ['dragenter', 'dragover'].forEach(eventName => {
-            wrapper.addEventListener(eventName, (e) => { e.preventDefault(); wrapper.classList.add('drag-over'); }, false);
+        document.getElementById('brush-size').addEventListener('input', (e) => {
+            brushSize = parseInt(e.target.value);
         });
-        ['dragleave', 'drop'].forEach(eventName => {
-            wrapper.addEventListener(eventName, (e) => { e.preventDefault(); wrapper.classList.remove('drag-over'); }, false);
-        });
-        wrapper.addEventListener('drop', (e) => handleImageUpload(e.dataTransfer.files[0]), false);
 
-
-        // --- 3. المحرك الأساسي للتأثيرات (Core Engine) ---
-        function applyEffectToRegion(x, y, w, h, shape = 'rect') {
-            if (currentToolMode === 'sticker') return; // لا تطبق فلاتر في وضع الملصق
+        // --- المحرك الرئيسي للتأثيرات (Advanced Effect Engine) ---
+        function applyEffect(x, y) {
+            const size = brushSize * (canvas.width / 800) * 1.5; // حجم نسبي
+            const r = size / 2;
 
             ctx.save();
             ctx.beginPath();
-            
-            if (shape === 'circle') {
-                ctx.arc(x, y, w/2, 0, Math.PI * 2);
-            } else {
-                ctx.rect(x, y, w, h);
-            }
-            ctx.clip();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.clip(); // العمل داخل الدائرة فقط
 
-            // قراءة قيمة الكثافة من السلايدر (1-100)
-            const intensity = parseInt(intensitySlider.value);
-
-            if (currentToolMode === 'mosaic') {
+            if (currentTool === 'eraser') {
+                // الممحاة الذكية: تعيد رسم الصورة الأصلية في هذه المنطقة
+                ctx.drawImage(originalImg, 0, 0, canvas.width, canvas.height);
+            } 
+            else if (currentTool === 'mosaic') {
+                // تأثير الموزايك
                 ctx.imageSmoothingEnabled = false;
-                // معادلة عكسية: كثافة أعلى = مربعات أصغر
-                // المدى الناتج تقريباً بين 3px (كثافة عالية) إلى 40px (كثافة منخفضة)
-                const pixelSize = Math.max(3, Math.floor(40 - (intensity * 0.35))); 
-
-                const regionW = shape === 'circle' ? w : w;
-                const regionH = shape === 'circle' ? w : h;
-                const regionX = shape === 'circle' ? x - w/2 : x;
-                const regionY = shape === 'circle' ? y - w/2 : y;
-
-                // رسم مصغر ثم تكبير
-                const miniW = Math.max(1, regionW / pixelSize);
-                const miniH = Math.max(1, regionH / pixelSize);
-                ctx.drawImage(canvas, regionX, regionY, regionW, regionH, regionX, regionY, miniW, miniH);
-                ctx.drawImage(canvas, regionX, regionY, miniW, miniH, regionX, regionY, regionW, regionH);
+                const pixelSize = Math.max(5, canvas.width / 80); // حجم تلقائي للمربعات
+                
+                // الطريقة السريعة: تصغير ثم تكبير المنطقة
+                // نستخدم خدعة لرسم كامل الصورة مصغرة ثم مكبرة، لكن الـ CLIP يظهر فقط الدائرة
+                const w = canvas.width;
+                const h = canvas.height;
+                const sw = w / pixelSize;
+                const sh = h / pixelSize;
+                
+                // طبقة مؤقتة
+                const tempC = document.createElement('canvas');
+                tempC.width = sw; tempC.height = sh;
+                const tempCtx = tempC.getContext('2d');
+                tempCtx.drawImage(canvas, 0, 0, sw, sh);
+                
+                // الرسم على الكانفاس الأصلي
+                ctx.drawImage(tempC, 0, 0, sw, sh, 0, 0, w, h);
             
-            } else if (currentToolMode === 'blur') {
-                // معادلة: كثافة أعلى = ضبابية أكثر (المدى من 1px إلى 20px تقريباً)
-                const blurAmount = Math.max(1, intensity / 5);
-                ctx.filter = `blur(${blurAmount}px)`;
-                // رسم المنطقة مرتين لتقليل مشاكل الحواف الشفافة
-                ctx.drawImage(canvas, 0, 0); 
-                ctx.drawImage(canvas, 0, 0); 
+            } 
+            else if (currentTool === 'blur') {
+                // تأثير الضباب
+                ctx.filter = 'blur(15px)';
+                ctx.drawImage(canvas, 0, 0); // رسم الصورة فوق نفسها مع فلتر
                 ctx.filter = 'none';
-
-            } else if (currentToolMode === 'color') {
-                ctx.fillStyle = "#000000"; // يمكن تغيير اللون هنا مستقبلاً
-                ctx.fill();
-                if(shape === 'rect') ctx.fillRect(x, y, w, h);
+            }
+            else if (currentTool === 'crystal') {
+                // تأثير الكريستال (محاكاة Pointillize)
+                // هذا يتطلب كود معقد، سنحاكيه بفلتر ضباب + تباين عالي + نويز
+                // أو نستخدم فلتر فسيفساء سداسية بسيط (محاكاة)
+                ctx.imageSmoothingEnabled = false;
+                ctx.filter = 'contrast(150%) blur(2px)';
+                
+                // رسم طبقة منقطة
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                for(let i=0; i<10; i++) {
+                     let rx = x - r + Math.random() * size;
+                     let ry = y - r + Math.random() * size;
+                     ctx.fillRect(rx, ry, size/5, size/5);
+                }
+                
+                const pSize = Math.max(10, canvas.width / 50);
+                const tempC = document.createElement('canvas');
+                tempC.width = canvas.width / pSize; tempC.height = canvas.height / pSize;
+                tempC.getContext('2d').drawImage(canvas, 0, 0, tempC.width, tempC.height);
+                ctx.drawImage(tempC, 0, 0, tempC.width, tempC.height, 0, 0, canvas.width, canvas.height);
+                ctx.filter = 'none';
             }
 
             ctx.restore();
         }
 
-        // --- 4. التعامل مع الماوس واللمس (الرسم + الملصقات) ---
-        function getMousePos(evt) {
+        // --- نظام التفاعل (Touch & Mouse) ---
+        function getPos(e) {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
-            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-            const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
-            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY,
+                screenX: clientX,
+                screenY: clientY
+            };
         }
 
-        function handlePointerDown(e) {
-            e.preventDefault();
-            const pos = getMousePos(e);
-
-            // --- وضع الملصقات (Sticker Mode) ---
-            if (currentToolMode === 'sticker' && stickerImage) {
-                // حساب حجم الملصق بناء على سلايدر الفرشاة
-                const scaleFactor = parseInt(brushSlider.value) / 50; // 1 is normal size
-                const sWidth = stickerImage.width * scaleFactor;
-                const sHeight = stickerImage.height * scaleFactor;
-                
-                // رسم الملصق في مركز النقرة
-                ctx.drawImage(stickerImage, pos.x - sWidth/2, pos.y - sHeight/2, sWidth, sHeight);
-                saveState();
-                return; // الخروج لعدم تفعيل الرسم
-            }
-
-            // --- وضع الرسم العادي ---
-            isDrawing = true;
-            handlePointerMove(e); // تطبيق التأثير فوراً عند الضغط
-        }
-
-        function handlePointerMove(e) {
-            if (!isDrawing || currentToolMode === 'sticker') return;
-            e.preventDefault();
-            const pos = getMousePos(e);
-            // حجم الفرشاة نسبي لعرض الصورة
-            const size = parseInt(brushSlider.value) * (canvas.width / 800); 
-            applyEffectToRegion(pos.x, pos.y, size, size, 'circle');
-        }
-
-        function handlePointerUp() {
-            if (isDrawing) {
-                isDrawing = false;
-                saveState();
-            }
-        }
-
-        // ربط الأحداث
-        canvas.addEventListener('mousedown', handlePointerDown);
-        canvas.addEventListener('mousemove', handlePointerMove);
-        canvas.addEventListener('mouseup', handlePointerUp);
-        // دعم الموبايل
-        canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
-        canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
-        canvas.addEventListener('touchend', handlePointerUp);
-
-
-        // --- 5. الذكاء الاصطناعي (Auto Face) ---
-        document.getElementById('btn-auto').addEventListener('click', async () => {
-            if (!originalImage.src) return alert("قم بتحميل صورة أولاً");
-            if (!isModelsLoaded) return alert("جاري تحميل نماذج الذكاء الاصطناعي، انتظر قليلاً...");
+        function updateMagnifier(pos) {
+            if (!isDrawing) { magnifier.style.display = 'none'; return; }
             
+            // إظهار المكبر
+            magnifier.style.display = 'block';
+            // تحريك المكبر ليكون فوق الاصبع قليلاً (مثل الآيفون)
+            magnifier.style.left = (pos.screenX - 50) + 'px';
+            magnifier.style.top = (pos.screenY - 120) + 'px';
+
+            // رسم محتوى المكبر
+            magCanvas.width = 200; // دقة عالية للمكبر
+            magCanvas.height = 200;
+            
+            // نأخذ لقطة من الكانفاس الأصلي حول نقطة اللمس
+            const zoomLevel = 2; // قوة التكبير
+            const sourceW = 100 / zoomLevel;
+            const sourceH = 100 / zoomLevel;
+            
+            // تنظيف الخلفية
+            magCtx.fillStyle = '#fff';
+            magCtx.fillRect(0,0,200,200);
+
+            // رسم الجزء المكبر
+            // نرسم من الصورة الأصلية (لكي يرى المستخدم ماذا يغطي) أو من الكانفاس (ليرى النتيجة)
+            // في تطبيقات التغبيش، عادة نري المستخدم ما هو "تحت" اصبعه (الكانفاس الحالي)
+            magCtx.drawImage(canvas, 
+                pos.x - (100/zoomLevel), pos.y - (100/zoomLevel), 200/zoomLevel, 200/zoomLevel,
+                0, 0, 200, 200
+            );
+            
+            // رسم علامة + في المنتصف
+            magCtx.strokeStyle = 'rgba(255,0,0,0.5)';
+            magCtx.lineWidth = 1;
+            magCtx.beginPath();
+            magCtx.moveTo(100, 90); magCtx.lineTo(100, 110);
+            magCtx.moveTo(90, 100); magCtx.lineTo(110, 100);
+            magCtx.stroke();
+        }
+
+        function handleStart(e) {
+            e.preventDefault(); // منع السكرول
+            isDrawing = true;
+            handleMove(e);
+        }
+
+        function handleMove(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            
+            applyEffect(pos.x, pos.y);
+            updateMagnifier(pos);
+        }
+
+        function handleEnd() {
+            isDrawing = false;
+            magnifier.style.display = 'none';
+            saveHistory();
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('mouseup', handleEnd);
+        
+        canvas.addEventListener('touchstart', handleStart, {passive: false});
+        canvas.addEventListener('touchmove', handleMove, {passive: false});
+        canvas.addEventListener('touchend', handleEnd);
+
+        // --- الذكاء الاصطناعي (Face API) ---
+        async function detectFaces() {
+            if(!originalImg.src) return alert('الرجاء اختيار صورة');
+            
+            const loader = document.getElementById('loader');
             loader.style.display = 'flex';
-            // فرض وضع الموزايك للذكاء الاصطناعي (أو يمكن استخدام الوضع الحالي)
-            const previousMode = currentToolMode;
-            if(currentToolMode === 'sticker') currentToolMode = 'mosaic'; 
+            document.getElementById('loader-text').innerText = 'تحميل الذكاء الاصطناعي...';
 
             try {
-                const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.4 });
-                const detections = await faceapi.detectAllFaces(canvas, options);
+                // تحميل الموديل عند الطلب فقط لتسريع التطبيق
+                await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
                 
-                if (detections.length === 0) alert("لم يتم العثور على وجوه.");
+                document.getElementById('loader-text').innerText = 'كشف الوجوه...';
+                const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.3 });
+                const detections = await faceapi.detectAllFaces(canvas, options);
 
-                detections.forEach(det => {
-                    const box = det.box;
-                    const padding = box.width * 0.2; // زيادة مساحة التغطية
-                    // نستخدم شكل 'rect' للذكاء الاصطناعي
-                    applyEffectToRegion(box.x - padding, box.y - padding, box.width + padding*2, box.height + padding*2, 'rect');
-                });
-                saveState();
+                if(detections.length === 0) {
+                    alert('لم يتم العثور على وجوه!');
+                } else {
+                    // تطبيق الفلتر الحالي على كل وجه
+                    detections.forEach(det => {
+                        const { x, y, width, height } = det.box;
+                        // محاكاة حركة الفرشاة على المنطقة
+                        const cx = x + width/2;
+                        const cy = y + height/2;
+                        // نكبر المنطقة قليلاً
+                        const radius = Math.max(width, height) * 0.6;
+                        
+                        // تطبيق تأثير دائري كبير
+                        brushSize = radius / (canvas.width / 800) / 1.5 * 2; // معادلة عكسية لضبط حجم الفرشاة
+                        applyEffect(cx, cy);
+                    });
+                    saveHistory();
+                }
+
             } catch (err) {
                 console.error(err);
-                alert("حدث خطأ في المعالجة.");
+                alert('تأكد من وجود مجلد /models');
             }
-            currentToolMode = previousMode; // استعادة الوضع السابق
             loader.style.display = 'none';
-        });
-
-        // --- 6. أدوات مساعدة (Undo / Save) ---
-        function saveState() {
-            historyStack.push(canvas.toDataURL());
-            if (historyStack.length > 15) historyStack.shift(); // زيادة عدد خطوات التراجع
         }
 
-        document.getElementById('btn-undo').addEventListener('click', () => {
-            if (historyStack.length <= 1) return;
-            historyStack.pop();
-            const img = new Image();
-            img.onload = () => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
-            };
-            img.src = historyStack[historyStack.length - 1];
-        });
+        // --- إدارة المحفوظات (History) ---
+        function saveHistory() {
+            if(historyStack.length > 10) historyStack.shift();
+            historyStack.push(canvas.toDataURL());
+        }
 
-        document.getElementById('btn-save').addEventListener('click', () => {
-            if (!originalImage.src) return;
+        function resetCanvas() {
+            if(confirm('هل أنت متأكد من مسح جميع التعديلات؟')) {
+                ctx.drawImage(originalImg, 0, 0, canvas.width, canvas.height);
+                saveHistory();
+            }
+        }
+
+        function saveImage() {
             const link = document.createElement('a');
-            link.download = 'edited_image_v3.jpg';
-            link.href = canvas.toDataURL('image/jpeg', 0.9); // حفظ بصيغة JPG وجودة 90%
+            link.download = 'Mosaic_Pro_iOS.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.95);
             link.click();
-        });
+        }
 
     </script>
 </body>
