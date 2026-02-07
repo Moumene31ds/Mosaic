@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mosaic Pro - مثل الآيفون</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #121212;
+            --surface: #1E1E1E;
+            --primary: #BB86FC;
+            --secondary: #03DAC6;
+            --text: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 10px;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* --- الهيدر --- */
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            box-sizing: border-box;
+        }
+
+        h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; color: var(--primary); }
+
+        /* --- منطقة العمل (Canvas) --- */
+        .canvas-wrapper {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            background: repeating-conic-gradient(#222 0% 25%, #181818 0% 50%) 50% / 20px 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            cursor: crosshair;
+        }
+
+        /* --- شريط الأدوات السفلي --- */
+        .toolbar {
+            background: var(--surface);
+            width: 100%;
+            max-width: 600px;
+            border-radius: 20px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+        }
+
+        .tools-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* أزرار الفلاتر */
+        .filter-group {
+            display: flex;
+            background: #2C2C2C;
+            border-radius: 12px;
+            padding: 4px;
+            flex-grow: 1;
+        }
+
+        .filter-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #aaa;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: #000;
+            font-weight: bold;
+        }
+
+        /* أزرار الإجراءات */
+        .action-btn {
+            background: #333;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .action-btn:hover { background: #444; }
+        .action-btn.ai { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .action-btn.save { background: var(--secondary); color: #000; }
+
+        /* التحكم في حجم الفرشاة */
+        .brush-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+        input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--primary);
+            height: 4px;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: white;
+            font-size: 1.2rem;
+            flex-direction: column;
+        }
+        
+        input[type="file"] { display: none; }
+
+    </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>MOSAIC</h1>
+        <button class="action-btn save" id="btn-save" title="حفظ الصورة"><span class="material-icons">save</span></button>
+    </header>
+
+    <div class="canvas-wrapper" id="wrapper">
+        <div class="loading-overlay" id="loader">
+            <span>🤖 جاري البحث عن وجوه...</span>
+        </div>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="toolbar">
+        <div class="tools-row">
+            <div class="filter-group">
+                <button class="filter-btn active" onclick="setFilter('mosaic')">مربعات</button>
+                <button class="filter-btn" onclick="setFilter('blur')">ضباب</button>
+                <button class="filter-btn" onclick="setFilter('color')">لون</button>
+            </div>
+        </div>
+
+        <div class="tools-row brush-control">
+            <span class="material-icons" style="font-size: 14px;">circle</span>
+            <input type="range" id="brush-size" min="10" max="100" value="40">
+            <span class="material-icons" style="font-size: 24px;">circle</span>
+        </div>
+
+        <div class="tools-row" style="justify-content: center; gap: 20px;">
+            <label for="upload" class="action-btn" title="فتح صورة"><span class="material-icons">add_photo_alternate</span></label>
+            <input type="file" id="upload" accept="image/*">
+
+            <button class="action-btn ai" id="btn-auto" title="كشف الوجوه تلقائياً">AI</button>
+            
+            <button class="action-btn" id="btn-undo" title="تراجع"><span class="material-icons">undo</span></button>
+        </div>
+    </div>
+
+    <script>
+        // --- المتغيرات الأساسية ---
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const loader = document.getElementById('loader');
+        const brushSlider = document.getElementById('brush-size');
+        
+        let originalImage = new Image();
+        let historyStack = [];
+        let currentFilter = 'mosaic'; // mosaic, blur, color
+        let isDrawing = false;
+
+        // --- تحميل موديلات الذكاء الاصطناعي ---
+        async function loadModels() {
+            // ملاحظة: تأكد من وجود مجلد models في نفس المسار
+            try {
+                // نحاول التحميل من المسار المحلي أولاً
+                await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+                console.log("AI Models Loaded");
+            } catch (e) {
+                console.warn("لم يتم العثور على الموديلات محلياً. تأكد من مجلد /models");
+                // يمكنك وضع رابط خارجي للموديلات هنا كحل بديل
+            }
+        }
+        loadModels();
+
+        // --- 1. رفع وعرض الصورة ---
+        document.getElementById('upload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                originalImage.onload = () => {
+                    // ضبط حجم الكانفاس ليناسب الشاشة مع الحفاظ على الأبعاد
+                    const wrapper = document.getElementById('wrapper');
+                    
+                    // نقوم بتعيين الحجم الفعلي للكانفاس ليكون نفس حجم الصورة الأصلية
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                    
+                    // الرسم المبدئي
+                    ctx.drawImage(originalImage, 0, 0);
+                    saveState(); // حفظ الحالة الأولى
+                };
+                originalImage.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // --- 2. محرك الفلاتر (The Filter Engine) ---
+        function setFilter(type) {
+            currentFilter = type;
+            // تحديث واجهة الأزرار
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // الدالة التي تطبق التأثير على منطقة محددة (مربع أو دائرة)
+        function applyEffectToRegion(x, y, w, h, isCircle = false) {
+            ctx.save();
+            ctx.beginPath();
+            
+            if (isCircle) {
+                // للفرشاة اليدوية نستخدم دائرة
+                ctx.arc(x, y, w/2, 0, Math.PI * 2);
+            } else {
+                // للذكاء الاصطناعي نستخدم مربع
+                ctx.rect(x, y, w, h);
+            }
+            
+            ctx.clip(); // نقص المنطقة لنعمل بداخلها فقط
+
+            if (currentFilter === 'mosaic') {
+                // تأثير المربعات
+                const pixelSize = 15;
+                ctx.imageSmoothingEnabled = false;
+                
+                // الطريقة: رسم الصورة مصغرة ثم تكبيرها
+                // نستخدم الاحداثيات المطلقة للكانفاس
+                const regionW = isCircle ? w : w;
+                const regionH = isCircle ? w : h;
+                const regionX = isCircle ? x - w/2 : x;
+                const regionY = isCircle ? y - w/2 : y;
+
+                const miniW = Math.max(1, regionW / pixelSize);
+                const miniH = Math.max(1, regionH / pixelSize);
+
+                ctx.drawImage(canvas, regionX, regionY, regionW, regionH, regionX, regionY, miniW, miniH);
+                ctx.drawImage(canvas, regionX, regionY, miniW, miniH, regionX, regionY, regionW, regionH);
+            
+            } else if (currentFilter === 'blur') {
+                // تأثير الضباب
+                ctx.filter = 'blur(12px)';
+                // نعيد رسم نفس المنطقة فوق نفسها (مع الفلتر)
+                // يجب توسيع المنطقة قليلاً لتجنب الحواف البيضاء في الضباب
+                ctx.drawImage(canvas, 0, 0); 
+                ctx.filter = 'none';
+
+            } else if (currentFilter === 'color') {
+                // تأثير اللون (أسود للخصوصية)
+                ctx.fillStyle = "#000000";
+                ctx.fill(); // يملأ المسار (دائرة أو مربع)
+                ctx.fillRect(x, y, w, h); // للمربع
+            }
+
+            ctx.restore();
+        }
+
+        // --- 3. الرسم اليدوي (Manual Brush) ---
+        function getMousePos(evt) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            // التعامل مع اللمس أو الماوس
+            const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+            const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function handleDraw(e) {
+            if (!isDrawing) return;
+            e.preventDefault(); // منع السكرول في الموبايل
+            const pos = getMousePos(e);
+            const size = parseInt(brushSlider.value) * (canvas.width / 1000 * 2); // ضبط الحجم نسبياً
+            
+            // نستخدم الدائرة للرسم اليدوي
+            applyEffectToRegion(pos.x, pos.y, size, size, true);
+        }
+
+        // أحداث الماوس واللمس
+        canvas.addEventListener('mousedown', (e) => { isDrawing = true; handleDraw(e); });
+        canvas.addEventListener('mousemove', handleDraw);
+        canvas.addEventListener('mouseup', () => { isDrawing = false; saveState(); });
+        canvas.addEventListener('mouseleave', () => { isDrawing = false; });
+        
+        // دعم الموبايل (Touch)
+        canvas.addEventListener('touchstart', (e) => { isDrawing = true; handleDraw(e); });
+        canvas.addEventListener('touchmove', handleDraw);
+        canvas.addEventListener('touchend', () => { isDrawing = false; saveState(); });
+
+        // --- 4. الذكاء الاصطناعي (Auto Face) ---
+        document.getElementById('btn-auto').addEventListener('click', async () => {
+            if (!originalImage.src) return alert("الرجاء اختيار صورة أولاً");
+            
+            loader.style.display = 'flex';
+            
+            try {
+                // إعدادات الكشف (نستخدم Tiny لسرعة الأداء)
+                const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.3 });
+                const detections = await faceapi.detectAllFaces(canvas, options);
+                
+                if (detections.length === 0) {
+                    alert("لم يتم العثور على وجوه واضحة.");
+                }
+
+                detections.forEach(det => {
+                    const box = det.box;
+                    // تكبير المنطقة قليلاً لتغطية الأذنين والشعر
+                    const padding = box.width * 0.15;
+                    
+                    applyEffectToRegion(
+                        box.x - padding, 
+                        box.y - padding, 
+                        box.width + (padding*2), 
+                        box.height + (padding*2),
+                        false // مربع
+                    );
+                });
+                
+                saveState();
+            } catch (err) {
+                console.error(err);
+                alert("حدث خطأ في الذكاء الاصطناعي. تأكد من تحميل الموديلات.");
+            }
+            
+            loader.style.display = 'none';
+        });
+
+        // --- 5. أدوات النظام (Undo / Save) ---
+        function saveState() {
+            if (historyStack.length > 8) historyStack.shift(); // الاحتفاظ بآخر 8 خطوات
+            historyStack.push(canvas.toDataURL());
+        }
+
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (historyStack.length <= 1) return;
+            historyStack.pop(); // إزالة الحالة الحالية
+            const prevState = historyStack[historyStack.length - 1];
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = prevState;
+        });
+
+        document.getElementById('btn-save').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'mosaic_edit.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+    </script>
+</body>
+</html>
